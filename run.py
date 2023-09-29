@@ -70,7 +70,7 @@ def checker(username, password):
                 HITS += 1 
                 typeresult = "HIT"
                 hit = open("hits.txt", "a+")
-                hit.write(f"{username}:{password}, Plan: {plan}, Expiry Date: {expiry1}, Days Left: {days_left}, CHECKED BY -> @TEAMDADDYOP\n")
+                hit.write(f"{username}:{password}, Plan: {plan}, Expiry Date: {expiry1}, Days Left: {days_left},\n")
             else:
                 EXPIRED += 1
                 typeresult = "Expired"
